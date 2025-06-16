@@ -1,0 +1,104 @@
+---
+title: "SICSS Day 1: NLP"
+subtitle: "Exercise 1 - Counting Words"
+output:
+  html_document:
+    code_folding: hide
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+
+author: "Alejandro Hermida Carrillo"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(scipen = 5)
+```
+
+## Setup!
+### Load the Necessary Packages
+```{r libs, include=FALSE}
+## Load the libraries
+
+# Expression that loads a package by name
+req <- substitute(require(x, character.only = TRUE))
+# List of libraries
+libs <- c("data.table", "ggplot2","tidyverse","skimr")
+# Attempt to load each package; if not installed, install it and try again
+sapply(libs, function(x) eval(req) || {install.packages(x, dependencies = TRUE); eval(req)})
+
+```
+
+### Set Working Directory and Load Helpers
+
+```{r wd}
+# Set working directory    -----------------------------------------------------
+path <- dirname(rstudioapi::getActiveDocumentContext()$path) # This is a relative path. Set alternative path if necessary
+setwd(path)
+
+#Load psychological dictionaries on agency and communality (from Lawson et al., 2022)
+source("helpers/SICSS_day1_helpers_dicts.R")
+
+```
+
+### Let's load some cool data. **Political speeches** from Trump and Biden (2020, CITE)
+
+```{r data}
+
+# Load it
+speeches <- readRDS("data/Biden_Trump_2020_speeches.rds")
+
+```
+
+## **Excercise 1.1:** who has a more "communal" linguistic style? and who a more "agentic" one?
+
+### First, let's inspect the psych dictionaries and the data. Is the data already in a state in which it can be analyzed?
+
+#### The psych. dictionaries: What's in them?
+```{r dicts-view}
+str(psych_dicts)
+```
+##### Do we need all of them?
+
+#### Now the data: What's in it?
+```{r data-view}
+skim(speeches)
+str(speeches)
+```
+
+#### Visual inspection shows that the speeches are transcribed inconsistently in uppercase / lowercase. Needs a litte bit more cleaning.
+
+```{r}
+speeches_clean <- speeches %>%
+  mutate(
+    #lowercase is the most standard pre-processing step
+    text = tolower(raw_text),
+    #Let's just use the last name of each candidate as identifier
+    candidate_last = str_to_upper(word(candidate, -1)),
+  ) %>%
+  select(candidate = candidate_last, speech_ID, date, text) %>%
+  as.data.table()
+
+```
+
+#### Now, let's compare the language of both candidates, deliver nice plots, statistical tests, and conclusions
+
+```{r}
+
+```
+
+## **Excercise 1.2:** Do the expressed communality and agency of candidates change after crisis events? 
+
+### Compare both candidates, deliver nice plots, statistical tests, and conclusions
+
+#### *Hint:* Is the data ready to be analyzed? We probably need to add some information
+
+```{r}
+
+```
+
+## **Excercise 1.3** (if there is time): who has a richer lexicon?
+
+```{r}
+
+```
+

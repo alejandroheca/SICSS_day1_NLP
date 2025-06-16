@@ -1,0 +1,58 @@
+---
+title: "SICSS Day 1: NLP"
+subtitle: "Exercise 2 - Word Embeddings"
+output:
+  html_document:
+    code_folding: hide
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+
+author: "Alejandro Hermida Carrillo"
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(scipen = 5)
+```
+
+## Load Libraries
+
+```{r, include=FALSE}
+
+# Expression that loads a package by name
+req <- substitute(require(x, character.only = TRUE))
+# List of libraries
+libs <- c("data.table", "ggplot2","tidyverse","conText","quanteda")
+# Attempt to load each package; if not installed, install it and try again
+sapply(libs, function(x) eval(req) || {install.packages(x, dependencies = TRUE); eval(req)})
+
+```
+
+## Set working directory, load helper files
+
+```{r, include=FALSE}
+# Set working directory    -----------------------------------------------------
+path <- dirname(rstudioapi::getActiveDocumentContext()$path) # This is a relative path. Set alternative path if necessary
+setwd(path)
+getwd()
+
+#Load the helper functions to work with simple embedding computations
+
+source("helpers/SICSS_day1_helpers_functions.R")
+
+```
+
+
+## Excercise 2: How do Biden and Trump talk about each other?
+
+### 2.1. Who talks more about the other in the speeches?
+
+##### Let's start by loading our (clean) speeches dataset
+
+```{r}
+
+speeches_clean <- readRDS("data/speeches_clean.rds")
+
+```
+
+##### Now go for it! 
