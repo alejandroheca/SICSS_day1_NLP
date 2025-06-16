@@ -178,6 +178,17 @@ term_toks <- tokens_context(x = toks_nostop_feats, pattern = pattern, window = 6
 
 ```
 
+
+
+#### Quick check. Who uses the word more?
+
+```{r}
+# Let's use the function plot_word_mentions from the helpers file
+plot_word_mentions("freedom",text_column=text, speeches_clean)
+
+```
+
+
 ```{r}
 # build a document-feature matrix
 term_dfm <- dfm(term_toks)
@@ -331,10 +342,10 @@ model1 <- conText(formula = c("freed*","free") ~ candidate + covid_period,
 
 ```{r}
 
-BPost_wv <- model1['(Intercept)',] # Biden pre COVID
-BPre_wv <- model1['(Intercept)',] + model1['covid_period',] # Biden during COVID 
-TPost_wv <- model1['(Intercept)',] + model1['candidate_TRUMP',] # Trump pre COVID
-TPre_wv <- model1['(Intercept)',] + model1['candidate_TRUMP',] + model1['covid_period',] # Trump during COVID
+BPost_wv <- model1['(Intercept)',] # Biden no COVID
+BPre_wv <- model1['(Intercept)',] + model1['covid_period',] # Biden and COVID 
+TPost_wv <- model1['(Intercept)',] + model1['candidate_TRUMP',] # Trump no COVID
+TPre_wv <- model1['(Intercept)',] + model1['candidate_TRUMP',] + model1['covid_period',] # Trump and COVID
 
 # nearest neighbors
 nns(rbind(BPre_wv,BPost_wv,TPre_wv,TPost_wv), N = 10, pre_trained = word_vectors, candidates = model1@features)

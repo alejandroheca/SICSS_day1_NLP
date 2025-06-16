@@ -105,26 +105,26 @@ plot_word_mentions <- function(word,
         time_unit == "year_quarter" ~ str_c(lubridate::year(date), "_Q", lubridate::quarter(date)),
         time_unit == "month" ~ str_c(lubridate::year(date), "_", stringr::str_pad(lubridate::month(date), 2, "left", "0")),
         time_unit == "year" ~ as.character(lubridate::year(date))
-      )
+      ),
+      word_count = str_count(!!text_col, "\\w+"),
+      word_mentions = str_count(!!text_col, regex(word, ignore_case = TRUE)),
+      word_prop = word_mentions / word_count
     ) %>%
-    mutate(count = str_count(!!text_col, regex(word, ignore_case = TRUE))) %>%
     group_by(candidate, time_group) %>%
     summarise(
-      total_mentions = sum(count, na.rm = TRUE),
-      n_speeches = n(),
-      avg_mentions_per_speech = total_mentions / n_speeches,
+      avg_proportion = mean(word_prop, na.rm = TRUE),
       .groups = "drop"
     )
   
-  ggplot(data, aes(x = time_group, y = avg_mentions_per_speech, 
+  ggplot(data, aes(x = time_group, y = avg_proportion, 
                    color = candidate, group = candidate)) +
     geom_line(linewidth = 1.2) +
     geom_point() +
     labs(
-      title = paste("Mentions of", shQuote(word), "Over Time"),
+      title = paste("Proportion of", shQuote(word), "Mentions Over Time"),
       subtitle = if (!is.null(candidates)) paste("Candidates:", paste(candidates, collapse = ", ")) else NULL,
       x = stringr::str_to_title(gsub("_", " ", time_unit)),
-      y = "Avg Mentions per Speech",
+      y = "Avg Word Proportion (per Speech)",
       color = "Candidate"
     ) +
     theme_minimal(base_size = 14) +
@@ -133,3 +133,4 @@ plot_word_mentions <- function(word,
       panel.grid = element_blank()
     )
 }
+
