@@ -1,0 +1,305 @@
+---
+title: "SICSS Day 1: NLP"
+subtitle: "Exercise 1 - Counting Words"
+output:
+  html_document:
+    code_folding: hide
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+
+author: "Alejandro Hermida Carrillo"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(scipen = 5)
+```
+
+## Setup
+### Load the Necessary Packages
+```{r libs, include=FALSE}
+## Load the libraries
+
+# Expression that loads a package by name
+req <- substitute(require(x, character.only = TRUE))
+# List of libraries
+libs <- c("data.table", "ggplot2","tidyverse","skimr")
+# Attempt to load each package; if not installed, install it and try again
+sapply(libs, function(x) eval(req) || {install.packages(x, dependencies = TRUE); eval(req)})
+
+```
+
+### Set Working Directory and Load Helpers
+
+```{r wd}
+# Set working directory    -----------------------------------------------------
+path <- dirname(rstudioapi::getActiveDocumentContext()$path) # This is a relative path. Set alternative path if necessary
+setwd(path)
+
+#Load psychological dictionaries on agency and communality (from Lawson et al., 2022)
+source("helpers/SICSS_day1_helpers_dicts.R")
+
+```
+
+### Let's load some cool data. Political speeches from Trump and Biden (2020, CITE)
+
+```{r data}
+# Load it
+speeches <- readRDS("data/Biden_Trump_2020_speeches.rds")
+
+```
+
+## **Excercise 1.1:** who has a more "communal" linguistic style? and who a more "agentic" one?
+
+### First, let's inspect the psych dictionaries and the data. Is the data already in a state in which it can be analyzed?
+
+#### The psych. dictionaries: What's in them?
+```{r dicts-view}
+str(psych_dicts)
+```
+##### Do we need all of them?
+
+#### Now the data: What's in it?
+```{r data-view}
+skim(speeches)
+str(speeches)
+```
+
+#### Visual inspection shows that the speeches are transcribed inconsistently in uppercase / lowercase. Needs a litte bit more cleaning.
+
+```{r}
+speeches_clean <- speeches %>%
+  mutate(
+    #lowercase is the most standard pre-processing step
+    text = tolower(raw_text),
+    #Let's just use the last name of each candidate as identifier
+    candidate_last = str_to_upper(word(candidate, -1)),
+  ) %>%
+  select(candidate = candidate_last, speech_ID, date, text) %>%
+  as.data.table()
+
+```
+
+#### Now, let's compare the language of both candidates, deliver nice plots, statistical tests, and conclusions
+
+##### First, let's count the communality and agency words per speech
+
+```{r}
+#Where are the lists of words?
+communality_words <- psych_dicts$communality
+agency_words <- psych_dicts$agency
+
+#Count how many times they occur on each speech
+speeches_clean <- speeches_clean %>%
+  mutate(
+    communality_count = str_count(text, regex(paste(communality_words, collapse = "|"), ignore_case = TRUE)),
+    agency_count = str_count(text, regex(paste(agency_words, collapse = "|"), ignore_case = TRUE))
+  )
+
+skim(speeches_clean)
+
+```
+
+### What's up with communality?
+
+```{r}
+ggplot(speeches_clean, aes(x = candidate, y = communality_count, fill = candidate)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.7) +
+  geom_jitter(width = 0.2, alpha = 0.4, color = "black") +
+  labs(
+    title = "Communal Word Use per Speech",
+    y = "Communal Word Sum",
+    x = "Candidate"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(panel.grid = element_blank())
+
+summary(lm(communality_count~candidate,speeches_clean))
+
+```
+### And with agency?
+
+```{r}
+
+ggplot(speeches_clean, aes(x = candidate, y = agency_count, fill = candidate)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.7) +
+  geom_jitter(width = 0.2, alpha = 0.4, color = "black") +
+  labs(
+    title = "Agency Word Use per Speech",
+    y = "Agency Word Sum",
+    x = "Candidate"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(panel.grid = element_blank())
+
+summary(lm(agency_count~candidate,speeches_clean))
+
+```
+
+#### These results are not technically wrong. But are they meaningful?
+#### How can we make them more meaningful?
+
+#### Solution 1 (useful for plotting): compute proportions
+
+```{r}
+
+speeches_clean <- speeches_clean %>%
+  mutate(
+    word_count = str_count(text, "\\w+"),
+    communality_prop = communality_count / word_count,
+    agency_prop = agency_count / word_count
+  )
+
+skim(speeches_clean)
+
+```
+
+
+```{r}
+
+ggplot(speeches_clean, aes(x = candidate, y = communality_prop, fill = candidate)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.7) +
+  geom_jitter(width = 0.2, alpha = 0.4, color = "black") +
+  labs(
+    title = "Communality Word Proportion per Speech",
+    y = "Communality Word Proportion",
+    x = "Candidate"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(panel.grid = element_blank())
+
+ggplot(speeches_clean, aes(x = candidate, y = agency_prop, fill = candidate)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.7) +
+  geom_jitter(width = 0.2, alpha = 0.4, color = "black") +
+  labs(
+    title = "Agency Word Proportion per Speech",
+    y = "Agency Word Proportion",
+    x = "Candidate"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(panel.grid = element_blank())
+
+
+
+```
+
+#### Solution 2 (for statsitical analyses): control for the word count
+
+```{r}
+summary(lm(communality_count~candidate + word_count,speeches_clean))
+summary(lm(agency_count~candidate + word_count,speeches_clean))
+
+```
+
+## **Excercise 1.2:** Do the expressed communality and agency of candidates change after crisis events? 
+
+### Compare both candidates, deliver nice plots, statistical tests, and conclusions
+
+#### *Hint:* Is the data ready to be analyzed? We probably need to add some information
+
+```{r}
+speeches_clean <- speeches_clean %>%
+  mutate(
+    #Potential meaningful events
+    covid_period = ifelse(date < as.Date("2020-03-11"), 0, 1),
+    blm_period = ifelse(date < as.Date("2020-05-25"), 0,1),
+    post_election = ifelse(date < as.Date("2020-11-07"), 0,1)
+  ) 
+
+
+skimr::skim(speeches_clean)
+
+# This version of the DB will be useful for the next excercises, so we save it
+saveRDS(speeches_clean,"data/speeches_clean.rds")
+
+```
+
+### How do the proportions change across time?
+
+```{r}
+
+ggplot(speeches_clean, aes(x = date, y = communality_prop, color = candidate)) +
+  geom_line(alpha = 0.4) +
+  geom_smooth(se = FALSE, method = "loess", span = 0.3, alpha = 0.3) +
+  geom_vline(xintercept = as.Date("2020-03-11"), linetype = "dashed", color = "darkgrey") +
+  geom_vline(xintercept = as.Date("2020-05-25"), linetype = "dashed", color = "darkgrey") +
+  geom_vline(xintercept = as.Date("2020-11-07"), linetype = "dashed", color = "darkgrey") +
+  annotate("text", x = as.Date("2020-03-11"), y = .01, label = "COVID onset", vjust = 2, angle = 90, size = 3) +
+  annotate("text", x = as.Date("2020-05-25"), y = .01, label = "G.Floyd murder", vjust = 2, angle = 90, size = 3) +
+  annotate("text", x = as.Date("2020-11-07"), y = .01, label = "Trump Loses", vjust = 2, angle = 90, size = 3) +
+  labs(
+    title = "Communal Language Over Time",
+    x = "Date",
+    y = "Proportion of Communal Words",
+    color = "Candidate"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(panel.grid = element_blank())
+
+
+ggplot(speeches_clean, aes(x = date, y = agency_prop, color = candidate)) +
+  geom_line(alpha = 0.4) +
+  geom_smooth(se = FALSE, method = "loess", span = 0.3, alpha = 0.3) +
+  geom_vline(xintercept = as.Date("2020-03-11"), linetype = "dashed", color = "darkgrey") +
+  geom_vline(xintercept = as.Date("2020-05-25"), linetype = "dashed", color = "darkgrey") +
+  geom_vline(xintercept = as.Date("2020-11-07"), linetype = "dashed", color = "darkgrey") +
+  annotate("text", x = as.Date("2020-03-11"), y = .01, label = "COVID onset", vjust = 2, angle = 90, size = 3) +
+  annotate("text", x = as.Date("2020-05-25"), y = .01, label = "G.Floyd murder", vjust = 2, angle = 90, size = 3) +
+  annotate("text", x = as.Date("2020-11-07"), y = 0.01, label = "Trump Loses", vjust = 2, angle = 90, size = 3) +
+  labs(
+    title = "Agentic Language Over Time",
+    x = "Date",
+    y = "Proportion of Agency Words",
+    color = "Candidate"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(panel.grid = element_blank())
+
+
+```
+
+### Let's test: do the candidates change their communal and agentic content after the onset of COVID?
+
+```{r}
+
+summary(lm(communality_count~candidate*covid_period + word_count,speeches_clean))
+summary(lm(agency_count~candidate*covid_period + word_count,speeches_clean))
+
+```
+
+### Let's test: do the candidates change their communal and agentic content after the election?
+
+```{r}
+summary(lm(communality_count~candidate*post_election + word_count,speeches_clean))
+summary(lm(agency_count~candidate*post_election + word_count,speeches_clean))
+```
+
+
+## Excercise 1.3 (if there is time): who has a richer lexicon?
+
+### One solution: compute the proportion of unique words per speech
+
+```{r}
+
+speeches_clean <- speeches_clean %>%
+  mutate(
+    words = str_extract_all(text, "\\b\\w+\\b"),
+    unique_word_count = sapply(words, function(w) length(unique(w))),
+    unique_word_proportion = unique_word_count / word_count
+  )
+
+ggplot(speeches_clean, aes(x = candidate, y = unique_word_proportion, fill = candidate)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.7) +
+  geom_jitter(width = 0.2, alpha = 0.4, color = "black") +
+  labs(
+    title = "Lexical Diversity per Speech",
+    y = "Unique Word Proportion",
+    x = "Candidate"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(panel.grid = element_blank())
+
+
+```
+
+## So! Dicionaries can be easy and informative tools if we know what we are looking for. 
+
