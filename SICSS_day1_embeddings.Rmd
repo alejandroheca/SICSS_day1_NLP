@@ -76,7 +76,7 @@ View(head(word_vectors,20))
 ### Example: Most Similar to "king"
 
 ```{r}
-most_similar("king", word_vectors, 10)
+most_similar("table", word_vectors, 10)
 ```
 
 ### And most dissimilar?
@@ -100,7 +100,7 @@ plot_words(c("king", "queen", "man", "woman", "child", "prince", "princess"), wo
 
 ```{r}
 
-plot_words(c("king", "queen", "man", "woman", "child", "prince", "princess"), word_vectors)
+plot_words(c("king", "queen", "man", "woman", "child", "prince", "princess","lion"), word_vectors)
 
 ```
 
@@ -121,7 +121,7 @@ analogy("king", "man","woman", word_vectors, 5)
 
 ```{r}
 
-analogy("circus","clown",  "professor", word_vectors, 5)
+analogy("circus","clown",  "lion", word_vectors, 5)
 
 ```
 
@@ -171,7 +171,7 @@ toks_nostop_feats <- tokens_select(toks_nostop, feats, padding = TRUE)
 
 ```{r}
 # I am choosing free / freedom, but can be anything
-pattern <- c("freed*","free")
+pattern <- c("weapon**","gun")
 
 # build a tokenized corpus of contexts surrounding the target term we want
 term_toks <- tokens_context(x = toks_nostop_feats, pattern = pattern, window = 6L)
@@ -184,7 +184,7 @@ term_toks <- tokens_context(x = toks_nostop_feats, pattern = pattern, window = 6
 
 ```{r}
 # Let's use the function plot_word_mentions from the helpers file
-plot_word_mentions("freedom",text_column=text, speeches_clean)
+plot_word_mentions("gun",text_column=text, speeches_clean)
 
 ```
 
@@ -207,7 +207,7 @@ transform_matrix <- readRDS("data/khodakA.rds")
 
 ```
 
-#### Then it extracts the 
+#### Then it extracts the document embedding matrix
 
 ```{r}
 # build the document-embedding-matrix
@@ -248,7 +248,7 @@ term_nns[["BIDEN"]]
 
 ```{r}
 # compute the cosine similarity between each party's embedding and a specific set of words
-conText::cos_sim(term_wv_candidate, pre_trained = word_vectors, features = c('capitalism', 'america'), as_list = FALSE)
+conText::cos_sim(term_wv_candidate, pre_trained = word_vectors, features = c('capitalism', 'america','immigration'), as_list = FALSE)
 
 ```
 
