@@ -48,9 +48,21 @@ source("helpers/SICSS_day1_helpers_functions.R")
 
 ```{r, include=FALSE}
 
-# Load it
-word_vectors <- readRDS("data/glove.rds")
+glove_path <- "data/glove.rds"
 
+glove_url <- "https://www.dropbox.com/scl/fi/22mmhoj9qctijrityy2fz/glove.rds?rlkey=t9lwh1gidt55p4zisp0ouxiut&st=we2lcaok&dl=1"
+# Load it
+# Check if file exists, otherwise download it
+if (!file.exists(glove_path)) {
+  message("glove.rds not found — downloading from Dropbox...")
+  dir.create("data", showWarnings = FALSE)
+  download.file(glove_url, destfile = glove_path, mode = "wb")
+} else {
+  message("glove.rds already present locally.")
+}
+
+# Load into object
+word_vectors <- readRDS(glove_path)
 ```
 
 # How does a word embedding model look like?
